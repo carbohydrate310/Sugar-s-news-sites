@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    /* --- デザイン変数 --- */
+    :root {
+      --primary: #a00;
+      --primary-hover: #cc0000;
+      --bg: #fdfdfd;
+      --text-main: #1a1a1a;
+      --text-sub: #555555;
+      --text-muted: #888888;
+      --border: #e0e0e0;
+      --transition: all 0.2s ease-in-out;
+    }
+
+    body {
+      font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif;
+      background: var(--bg);
+      margin: 0;
+      padding: 0;
+      color: var(--text-main);
+      line-height: 1.6;
+    }
+
+    /* --- ヘッダー --- */
+    header {
+      background: #fff;
+      border-bottom: 3px solid var(--primary);
+      padding: 12px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+
+    .logo {
+      font-size: 24px;
+      font-weight: 900;
+      color: var(--primary);
+      text-decoration: none;
+      cursor: pointer;
+    }
+
+    .main-container {
+      max-width: 800px;
+      margin: 20px auto;
+      padding: 0 20px;
+    }
+
+    /* --- カテゴリーフィルター --- */
+    .filter-bar {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 15px;
+    }
+
+    .filter-btn {
+      background: #eee;
+      border: none;
+      padding: 6px 15px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .filter-btn.active {
+      background: var(--primary);
+      color: white;
+    }
+
+    /* --- カテゴリーラベルの色分け --- */
+    .cat-badge {
+      display: inline-block;
+      padding: 2px 8px;
+      font-size: 11px;
+      font-weight: bold;
+      color: white;
+      border-radius: 3px;
+      margin-bottom: 5px;
+      text-transform: uppercase;
+    }
+    .cat-国内 { background: #d32f2f; }
+    .cat-政治 { background: #1976d2; }
+    .cat-経済 { background: #388e3c; }
+    .cat-テクノロジー { background: #7b1fa2; }
+    .cat-スポーツ { background: #f57c00; }
+    .cat-未分類 { background: #757575; }
+
+    /* --- ニュースカード --- */
+    .news-card {
+      border-bottom: 1px solid var(--border);
+      padding: 20px 0;
+      animation: fadeIn 0.4s ease forwards;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(5px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .news-title-link {
+      font-size: 22px;
+      font-weight: 800;
+      color: #0056b3;
+      text-decoration: none;
+      cursor: pointer;
+      display: block;
+      line-height: 1.3;
+      margin-bottom: 5px;
+    }
+
+    .news-title-link:hover { text-decoration: underline; color: var(--primary); }
+
+    .news-subtitle { font-size: 15px; color: var(--text-sub); margin-bottom: 8px; }
+
+    .news-meta { font-size: 12px; color: var(--text-muted); }
+
+    /* --- 記事詳細 --- */
+    .detail-body { font-size: 18px; line-height: 1.9; white-space: pre-wrap; margin-top: 25px; padding-top: 25px; border-top: 1px solid var(--border); word-break: break-all; }
+
+    /* --- ボタン・フォーム --- */
+    .btn { background: var(--primary); color: white; border: none; padding: 12px 24px; border-radius: 6px; font-weight: bold; cursor: pointer; }
+    input, textarea, select { width: 100%; padding: 12px; margin-top: 10px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; font-size: 16px; }
+
+    #admin-nav, #list-view, #post-view, #detail-view, #error-msg { display: none; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="logo" onclick="showListView()">CUSTOM NEWS JAPAN</div>
+    <div id="admin-nav">
+      <button class="btn" onclick="showPostView()" style="padding: 6px 15px;">＋ 投稿</button>
+      <button onclick="logout()" style="margin-left:10px; cursor:pointer; background:none; border:none; color:#666; font-size:12px; text-decoration:underline;">ログアウト</button>
+    </div>
+  </header>
+
+  <div class="main-container">
+    <div id="login-page" style="background:white; padding:40px; border-radius:12px; text-align:center; box-shadow:0 10px 30px rgba(0,0,0,0.08); margin-top:50px;">
+      <h2>限定アクセス</h2>
+      <input type="password" id="password" placeholder="パスワードを入力">
+      <button class="btn" onclick="login()" style="width:100%; margin-top:20px;">ログイン</button>
+      <div id="error-msg" style="color:var(--primary); margin-top:15px; font-weight:bold;">パスワードが正しくありません</div>
+    </div>
+
+    <div id="list-view">
+      <div class="filter-bar" id="filter-bar">
+        <button class="filter-btn active" onclick="filterCategory('すべて')">すべて</button>
+        <button class="filter-btn" onclick="filterCategory('国内')">国内</button>
+        <button class="filter-btn" onclick="filterCategory('政治')">政治</button>
+        <button class="filter-btn" onclick="filterCategory('経済')">経済</button>
+        <button class="filter-btn" onclick="filterCategory('テクノロジー')">テク</button>
+        <button class="filter-btn" onclick="filterCategory('スポーツ')">スポーツ</button>
+      </div>
+      <div id="news-list">読み込み中...</div>
+    </div>
+
+    <div id="detail-view">
+      <button onclick="showListView()" style="background:#eee; border:none; padding:8px 15px; border-radius:4px; cursor:pointer; margin-bottom:20px;">← 一覧へ戻る</button>
+      <div id="article-content"></div>
+    </div>
+
+    <div id="post-view" style="background:white; padding:40px; border-radius:12px; border:1px solid var(--border);">
+      <h2 style="margin:0 0 20px 0;">記事を作成</h2>
+      <label>カテゴリー</label>
+      <select id="post-category">
+        <option value="国内">国内</option>
+        <option value="政治">政治</option>
+        <option value="経済">経済</option>
+        <option value="テクノロジー">テクノロジー</option>
+        <option value="スポーツ">スポーツ</option>
+      </select>
+      <input id="post-name" placeholder="著者名">
+      <input id="post-title" placeholder="タイトル">
+      <input id="post-subtitle" placeholder="サブタイトル（一覧表示用）">
+      <textarea id="post-body" rows="12" placeholder="本文（HTMLコード貼り付けも可能）"></textarea>
+      <button class="btn" onclick="submitNews()" id="submit-btn" style="width:100%; margin-top:20px; padding:18px;">公開する</button>
+      <button onclick="showListView()" style="width:100%; margin-top:10px; background:none; border:none; color:#666; cursor:pointer;">キャンセル</button>
+    </div>
+  </div>
+
+  <script>
+    let allArticles = [];
+    let currentFilter = "すべて";
+
+    window.onload = function() {
+      if (sessionStorage.getItem("isLoggedIn") === "true") {
+        document.getElementById("login-page").style.display = "none";
+        document.getElementById("admin-nav").style.display = "flex";
+        showListView();
+      }
+    };
+
+    function login() {
+      const pw = document.getElementById("password").value;
+      google.script.run.withSuccessHandler(function(res) {
+        if (res) {
+          sessionStorage.setItem("isLoggedIn", "true");
+          document.getElementById("login-page").style.display = "none";
+          document.getElementById("admin-nav").style.display = "flex";
+          showListView();
+        } else { document.getElementById("error-msg").style.display = "block"; }
+      }).checkPassword(pw);
+    }
+
+    function logout() {
+      sessionStorage.removeItem("isLoggedIn");
+      location.reload();
+    }
+
+    function showListView() {
+      hideAll();
+      document.getElementById("list-view").style.display = "block";
+      loadNews();
+    }
+
+    function showPostView() {
+      hideAll();
+      document.getElementById("post-view").style.display = "block";
+    }
+
+    function filterCategory(cat) {
+      currentFilter = cat;
+      // ボタンの見た目更新
+      const btns = document.querySelectorAll('.filter-btn');
+      btns.forEach(btn => {
+        btn.classList.toggle('active', btn.textContent === (cat === 'テクノロジー' ? 'テク' : cat));
+      });
+      renderList();
+    }
+
+    function renderList() {
+      const div = document.getElementById("news-list");
+      div.innerHTML = "";
+      
+      const filtered = allArticles.filter(a => currentFilter === "すべて" || a.category === currentFilter);
+      
+      if (filtered.length === 0) {
+        div.innerHTML = "<p style='color:#888;'>該当する記事はありません。</p>";
+        return;
+      }
+
+      filtered.forEach((article) => {
+        const card = document.createElement("div");
+        card.className = "news-card";
+
+        const badge = document.createElement("span");
+        badge.className = "cat-badge cat-" + article.category;
+        badge.textContent = article.category;
+
+        const link = document.createElement("a");
+        link.className = "news-title-link";
+        link.textContent = article.title;
+        // allArticles内での元のindexを探して渡す
+        const originalIndex = allArticles.indexOf(article);
+        link.onclick = function() { showDetail(originalIndex); };
+
+        const sub = document.createElement("div");
+        sub.className = "news-subtitle";
+        sub.textContent = article.subtitle;
+
+        const meta = document.createElement("div");
+        meta.className = "news-meta";
+        meta.textContent = `著者: ${article.name} | ${article.date}`;
+
+        card.appendChild(badge);
+        card.appendChild(link);
+        card.appendChild(sub);
+        card.appendChild(meta);
+        div.appendChild(card);
+      });
+    }
+
+    function showDetail(index) {
+      const article = allArticles[index];
+      hideAll();
+      document.getElementById("detail-view").style.display = "block";
+      
+      const container = document.getElementById("article-content");
+      container.innerHTML = `
+        <span class="cat-badge cat-${article.category}">${article.category}</span>
+        <h1 style="font-size:32px; margin:10px 0;"></h1>
+        <div class="news-meta">著者: <span class="author"></span> | <span class="date"></span></div>
+        <div class="detail-body"></div>
+      `;
+      container.querySelector("h1").textContent = article.title;
+      container.querySelector(".author").textContent = article.name;
+      container.querySelector(".date").textContent = article.date;
+      container.querySelector(".detail-body").textContent = article.body;
+      window.scrollTo(0,0);
+    }
+
+    function hideAll() {
+      ["list-view", "post-view", "detail-view"].forEach(id => {
+        document.getElementById(id).style.display = "none";
+      });
+    }
+
+    function submitNews() {
+      const btn = document.getElementById("submit-btn");
+      const title = document.getElementById("post-title").value;
+      const subtitle = document.getElementById("post-subtitle").value;
+      const body = document.getElementById("post-body").value;
+      const name = document.getElementById("post-name").value;
+      const category = document.getElementById("post-category").value;
+      
+      if(!title || !subtitle || !body || !name) return alert("入力不足です");
+
+      btn.disabled = true;
+      btn.textContent = "送信中...";
+
+      google.script.run
+        .withSuccessHandler(function() {
+          alert("公開しました！");
+          btn.disabled = false;
+          btn.textContent = "公開する";
+          document.getElementById("post-title").value = "";
+          document.getElementById("post-subtitle").value = "";
+          document.getElementById("post-body").value = "";
+          showListView();
+        })
+        .postNews(title, subtitle, body, name, category);
+    }
+
+    function loadNews() {
+      const div = document.getElementById("news-list");
+      google.script.run.withSuccessHandler(function(list) {
+        allArticles = list.reverse(); 
+        renderList();
+      }).getNewsList();
+    }
+  </script>
+</body>
+</html>
