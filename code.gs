@@ -7,16 +7,40 @@ function doGet() {
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 }
 
-function checkPassword(inputPassword) {
-  const sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName("settings");
-  const values = sheet.getDataRange().getValues();
-  for (let i = 0; i < values.length; i++) {
-    if (values[i][0] === "password") return inputPassword === String(values[i][1]);
+// --- アカウント関連機能 ---
+
+// 新規登録
+function signupUser(username, password, displayName) {
+  const sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName("users");
+  const data = sheet.getDataRange().getValues();
+  
+  // ユーザー名の重複チェック
+  for (let i = 1; i < data.length; i++) {
+    if (data[i][0] === username) return "exists";
   }
-  return false;
+  
+  sheet.appendRow([username, password, displayName]);
+  return "success";
 }
 
-// categoryを追加して6列（A-F）で保存
+// ログイン
+function loginUser(username, password) {
+  const sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName("users");
+  const data = sheet.getDataRange().getValues();
+  
+  for (let i = 1; i < data.length; i++) {
+    if (data[i][0] === username && String(data[i][1]) === password) {
+      return {
+        username: data[i][0],
+        displayName: data[i][2]
+      };
+    }
+  }
+  return null;
+}
+
+// --- ニュース関連機能 ---
+
 function postNews(title, subtitle, body, name, category) {
   const sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName("news");
   sheet.appendRow([new Date(), title, subtitle, body, name, category]); 
@@ -27,8 +51,6 @@ function getNewsList() {
   const sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName("news");
   const lastRow = sheet.getLastRow();
   if (lastRow < 2) return [];
-  
-  // A列(時間)からF列(カテゴリー)までの6列分を取得
   const values = sheet.getRange(2, 1, lastRow - 1, 6).getValues();
   
   return values.map((row, index) => ({
